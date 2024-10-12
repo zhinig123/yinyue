@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ playlist.title }} - 简约音乐库</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Noto Serif SC', serif;
+        }
+        h1, h2 {
+            font-family: 'ZCOOL XiaoWei', serif;
+        }
+        .bg-blur {
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fadeIn 1s ease-out;
+        }
+        .animate-slide-in {
+            animation: slideIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        input[type="text"], input[type="text"]::placeholder {
+            color: black;
+        }
+        .text-shadow {
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .hover-scale {
+            transition: transform 0.3s ease;
+        }
+        .hover-scale:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+    <div id="particles-js" class="fixed inset-0"></div>
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <h1 class="text-5xl font-bold mb-8 text-center animate-fade-in text-shadow">{{ playlist.title }}</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="col-span-1 space-y-8">
+                <div class="bg-blur rounded-lg p-6 animate-slide-in hover-scale">
+                    <h2 class="text-3xl font-semibold mb-4 text-shadow">热门歌曲</h2>
+                    <ul class="space-y-2">
+                        {% for song in hot_songs %}
+                        <li class="flex justify-between items-center">
+                            <span>{{ song.title }}</span>
+                            <span class="text-sm text-gray-300">{{ song.downloads }} 下载</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div class="bg-blur rounded-lg p-6 animate-slide-in hover-scale" style="animation-delay: 0.2s;">
+                    <h2 class="text-3xl font-semibold mb-4 text-shadow">歌单推荐</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                        {% for pl in playlists %}
+                        <a href="{{ url_for('playlist', playlist_id=pl.id) }}" class="block">
+                            <div class="bg-white bg-opacity-20 rounded-lg overflow-hidden hover:bg-opacity-30 transition duration-300">
+                                <img src="{{ pl.cover }}" alt="{{ pl.title }}" class="w-full h-32 object-cover">
+                                <div class="p-2">
+                                    <h3 class="text-lg font-semibold text-center">{{ pl.title }}</h3>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-span-1 md:col-span-2 space-y-8">
+                <div class="bg-blur rounded-lg p-6 animate-slide-in hover-scale" style="animation-delay: 0.2s;">
+                    <div class="flex items-center justify-between mb-4">
+                        <img src="{{ playlist.cover }}" alt="{{ playlist.title }}" class="w-32 h-32 object-cover rounded-lg">
+                        <a href="{{ playlist.download_link }}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-md text-white font-semibold transition duration-300">打包下载</a>
+                    </div>
+                    <h2 class="text-3xl font-semibold mb-4 text-shadow">歌曲列表</h2>
+                    <form action="{{ url_for('playlist', playlist_id=playlist.id) }}" method="GET" class="mb-4">
+                        <div class="flex">
+                            <input type="text" name="search" placeholder="搜索歌曲..." value="{{ search }}" class="flex-grow px-4 py-2 rounded-l-md text-black">
+                            <button type="submit" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-r-md text-white font-semibold transition duration-300">搜索</button>
+                        </div>
+                    </form>
+                    <ul class="space-y-2">
+                        {% for song in paginated_songs %}
+                        <li class="flex justify-between items-center">
+                            <span>{{ song }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="mt-4 flex justify-center space-x-2">
+                        {% if page > 1 %}
+                            <a href="{{ url_for('playlist', playlist_id=playlist.id, page=page-1, search=search) }}" class="px-3 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition duration-300">上一页</a>
+                        {% endif %}
+                        <span class="px-3 py-2 bg-white/20 text-white rounded-md">{{ page }} / {{ total_pages }}</span>
+                        {% if page < total_pages %}
+                            <a href="{{ url_for('playlist', playlist_id=playlist.id, page=page+1, search=search) }}" class="px-3 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition duration-300">下一页</a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <a href="{{ url_for('index') }}" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white font-semibold transition duration-300">返回首页</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script>
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: "#ffffff" },
+                shape: { type: "circle" },
+                opacity: { value: 0.5, random: false },
+                size: { value: 3, random: true },
+                line_linked: { enable: true, distance: 150, color: "#ffffff", opacity: 0.4, width: 1 },
+                move: { enable: true, speed: 2, direction: "none", random: false, straight: false, out_mode: "out", bounce: false }
+            },
+            interactivity: {
+                detect_on: "canvas",
+                events: { onhover: { enable: true, mode: "repulse" }, onclick: { enable: true, mode: "push" }, resize: true },
+                modes: { grab: { distance: 400, line_linked: { opacity: 1 } }, bubble: { distance: 400, size: 40, duration: 2, opacity: 8 }, repulse: { distance: 200, duration: 0.4 }, push: { particles_nb: 4 }, remove: { particles_nb: 2 } }
+            },
+            retina_detect: true
+        });
+    </script>
+</body>
+</html>
